@@ -1,0 +1,344 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>能源儀表板 - 互動測試版</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <style>
+    .test-controls {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+    }
+    .test-controls h3 {
+      margin: 0 0 10px 0;
+      color: #4CAF50;
+    }
+    .test-controls ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .test-controls li {
+      margin: 3px 0;
+    }
+    .test-controls kbd {
+      background: #333;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+    .status-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #2196F3;
+      color: white;
+      padding: 8px 20px;
+      font-size: 14px;
+      z-index: 999;
+      backdrop-filter: blur(10px);
+    }
+    .simple-chart {
+      width: 100%;
+      height: 250px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .simple-chart::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
+    }
+    .simple-chart .chart-content {
+      position: relative;
+      z-index: 1;
+    }
+    .device-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .device-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+    .device-card:hover {
+      background: #f1f5f9;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .device-status {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-online { 
+      background: #22c55e; 
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+    }
+    .status-offline { 
+      background: #ef4444; 
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+    }
+    .status-warning { 
+      background: #f59e0b; 
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+    }
+    .energy-value {
+      font-size: 2.5rem !important;
+      font-weight: 700 !important;
+      color: #1e293b !important;
+      text-align: center;
+    }
+    .loading {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <div class="test-controls">
+    <h3>🎮 測試控制台</h3>
+    <ul>
+      <li><kbd>1-5</kbd> 測試資料集</li>
+      <li><kbd>R</kbd> 重新整理</li>
+      <li><kbd>F</kbd> 全螢幕</li>
+      <li><kbd>ESC</kbd> 重置</li>
+    </ul>
+  </div>
+
+  <div class="status-bar">
+    <span id="current-dataset">正在載入...</span>
+    <span style="float: right;"><span id="last-updated">初始化中...</span></span>
+  </div>
+
+  <header>
+    <h1>能源儀表板 <small style="color: #666;">(互動測試版)</small></h1>
+  </header>
+
+  <main class="dashboard-grid">
+
+    <!-- 能源卡片區塊 -->
+    <section class="energy-cards" aria-label="用電量與碳排資訊">
+
+      <!-- 今日用電量 -->
+      <article class="energy-card">
+        <h2>今日用電量</h2>
+        <p class="energy-value">
+          <span id="today-kwh" aria-live="polite" class="loading">載入中...</span>
+        </p>
+        <p class="energy-unit">kWh</p>
+      </article>
+
+      <!-- 本月累計用電量 -->
+      <article class="energy-card">
+        <h2>本月累計用電量</h2>
+        <p class="energy-value">
+          <span id="month-kwh" aria-live="polite" class="loading">載入中...</span>
+        </p>
+        <p class="energy-unit">kWh</p>
+      </article>
+
+      <!-- 預估碳排放量 -->
+      <article class="energy-card">
+        <h2>預估碳排放量</h2>
+        <p class="energy-value">
+          <span id="carbon-emission" aria-live="polite" class="loading">載入中...</span>
+        </p>
+        <p class="energy-unit">kg CO₂</p>
+      </article>
+
+      <!-- 設備監控區塊 -->
+      <article class="energy-card">
+        <h2>設備狀態監控</h2>
+        <div class="device-grid">
+          <div class="device-card">
+            <div class="device-status status-online"></div>
+            <span>冷氣系統</span>
+          </div>
+          <div class="device-card">
+            <div class="device-status status-online"></div>
+            <span>照明設備</span>
+          </div>
+          <div class="device-card">
+            <div class="device-status status-warning"></div>
+            <span>熱水器</span>
+          </div>
+          <div class="device-card">
+            <div class="device-status status-offline"></div>
+            <span>洗衣機</span>
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- 能源趨勢圖表容器 -->
+    <div class="chart-container" aria-label="能源使用趨勢圖">
+      <h2>今日用電趨勢</h2>
+      <div class="simple-chart">
+        <div class="chart-content">
+          <div id="chart-title">📊 載入中...</div>
+          <small id="chart-subtitle" style="opacity: 0.8; margin-top: 8px;">正在初始化資料</small>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // 互動測試版功能 - 內嵌 JavaScript 確保正確載入
+    const datasets = {
+      1: { name: '基本家庭用電', todayKwh: 12.5, monthKwh: 285.2 },
+      2: { name: '高耗能辦公室', todayKwh: 145.8, monthKwh: 3847.5 },
+      3: { name: '節能住宅', todayKwh: 6.2, monthKwh: 142.8 },
+      4: { name: '工業設備', todayKwh: 892.4, monthKwh: 18756.9 },
+      5: { name: '智慧建築', todayKwh: 67.3, monthKwh: 1523.7 }
+    };
+
+    let currentDataset = 1;
+
+    function loadDataset(num) {
+      try {
+        if (datasets[num]) {
+          const data = datasets[num];
+          currentDataset = num;
+          
+          // 移除載入樣式
+          document.querySelectorAll('.loading').forEach(el => el.classList.remove('loading'));
+          
+          // 更新數值顯示
+          const todayEl = document.getElementById('today-kwh');
+          const monthEl = document.getElementById('month-kwh');
+          const carbonEl = document.getElementById('carbon-emission');
+          
+          if (todayEl) todayEl.textContent = data.todayKwh.toFixed(1);
+          if (monthEl) monthEl.textContent = data.monthKwh.toFixed(1);
+          
+          // 計算碳排放 (台灣電力碳排放係數約 0.509 kg CO2/kWh)
+          const carbonEmission = (data.todayKwh * 0.509).toFixed(2);
+          if (carbonEl) carbonEl.textContent = carbonEmission;
+          
+          // 更新狀態列
+          const currentDatasetEl = document.getElementById('current-dataset');
+          const lastUpdatedEl = document.getElementById('last-updated');
+          
+          if (currentDatasetEl) currentDatasetEl.textContent = '當前資料集: ' + data.name;
+          if (lastUpdatedEl) lastUpdatedEl.textContent = '最後更新: ' + new Date().toLocaleTimeString();
+          
+          // 更新圖表內容
+          const chartTitleEl = document.getElementById('chart-title');
+          const chartSubtitleEl = document.getElementById('chart-subtitle');
+          
+          if (chartTitleEl) chartTitleEl.textContent = '📊 ' + data.name + ' 用電趨勢';
+          if (chartSubtitleEl) chartSubtitleEl.textContent = `今日: ` + data.todayKwh + ` kWh | 本月: ` + data.monthKwh.toFixed(0) + ` kWh | 碳排放: ` + carbonEmission + ` kg CO₂`;
+          
+          console.log('✅ 載入資料集:', data.name, data);
+        }
+      } catch (error) {
+        console.error('❌ 載入資料集失敗:', error);
+      }
+    }
+
+    function refreshData() {
+      loadDataset(currentDataset);
+      console.log('🔄 資料已重新整理');
+    }
+
+    function resetData() {
+      loadDataset(1);
+      console.log('🔄 資料已重置至預設值');
+    }
+
+    function toggleFullscreen() {
+      try {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => {
+            console.log('⚠️ 全螢幕模式不可用:', err.message);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      } catch (error) {
+        console.log('⚠️ 全螢幕切換失敗:', error.message);
+      }
+    }
+
+    // 鍵盤事件監聽
+    document.addEventListener('keydown', function(event) {
+      switch(event.key) {
+        case '1': case '2': case '3': case '4': case '5':
+          event.preventDefault();
+          loadDataset(parseInt(event.key));
+          break;
+        case 'r': case 'R':
+          event.preventDefault();
+          refreshData();
+          break;
+        case 'f': case 'F':
+          event.preventDefault();
+          toggleFullscreen();
+          break;
+        case 'Escape':
+          event.preventDefault();
+          resetData();
+          break;
+      }
+    });
+
+    // 確保 DOM 載入完成後初始化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+          loadDataset(1);
+          console.log('✅ 互動測試版已載入完成');
+          console.log('🎮 使用鍵盤快捷鍵控制：1-5 切換資料集，R 重新整理，F 全螢幕，ESC 重置');
+        }, 100);
+      });
+    } else {
+      setTimeout(() => {
+        loadDataset(1);
+        console.log('✅ 互動測試版已載入完成');
+        console.log('🎮 使用鍵盤快捷鍵控制：1-5 切換資料集，R 重新整理，F 全螢幕，ESC 重置');
+      }, 100);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "energy-dashboard",
+  "version": "1.0.0",
+  "description": "能源儀表板 - 純 HTML/CSS/JavaScript 靜態頁面",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0",
+    "fast-check": "^3.0.0",
+    "jsdom": "^25.0.0"
+  }
+}

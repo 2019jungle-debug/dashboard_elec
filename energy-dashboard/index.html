@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>能源儀表板</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <header>
+    <h1>能源儀表板</h1>
+  </header>
+
+  <main class="dashboard-grid">
+
+    <!-- 能源卡片區塊 -->
+    <section class="energy-cards" aria-label="用電量與碳排資訊">
+
+      <!-- 今日用電量 -->
+      <article class="energy-card">
+        <h2>今日用電量</h2>
+        <p class="energy-value">
+          <span id="today-kwh" aria-live="polite">--</span>
+        </p>
+        <p class="energy-unit">kWh</p>
+      </article>
+
+      <!-- 本月累計用電量 -->
+      <article class="energy-card">
+        <h2>本月累計用電量</h2>
+        <p class="energy-value">
+          <span id="month-kwh" aria-live="polite">--</span>
+        </p>
+        <p class="energy-unit">kWh</p>
+      </article>
+
+      <!-- 預估碳排放量 -->
+      <article class="energy-card">
+        <h2>預估碳排放量</h2>
+        <p class="energy-value">
+          <span id="carbon-emission" aria-live="polite">--</span>
+        </p>
+        <p class="energy-unit">kg CO₂</p>
+      </article>
+
+    </section>
+
+    <!-- 設備監控容器 -->
+    <div class="device-monitor" aria-label="設備狀態監控"></div>
+
+    <!-- 能源趨勢圖表容器 -->
+    <div class="chart-container" aria-label="能源使用趨勢圖"></div>
+
+  </main>
+
+  <script type="module" src="scripts/dashboard.js"></script>
+</body>
+</html>
